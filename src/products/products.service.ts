@@ -1,4 +1,4 @@
-import { uploadSingleFile } from './../middlewares/uploadFiles.middleware';
+import { uploadMultiFiles } from "./../middlewares/uploadFiles.middleware";
 // imports
 import productsSchema from "./products.schema";
 import { Products } from "./products.interface";
@@ -8,7 +8,6 @@ import sharp from "sharp";
 
 // CRUD operations
 class ProductsService {
-
   //Show method
   getAll = refactorService.getAll<Products>(productsSchema, "products");
 
@@ -25,20 +24,58 @@ class ProductsService {
   deleteOne = refactorService.getAll<Products>(productsSchema);
 
   // uploded method
-  uploadImages = uploadSingleFile(["images"], "cover")
+  uploadImages = uploadMultiFiles(
+    ["images"],
+    [
+      { name: "cover", maxCount: 1 },
+      { name: "images", maxCount: 5 },
+    ]
+  );
+
+
 
   saveImage = async (req: Request, res: Response, next: NextFunction) => {
-    if (req.file) {
-      const fileName: string = `product-${Date.now()}-cover.webp`;
-      await sharp(req.file.buffer)
-        .resize(1200, 1200)
-        .webp({ quality: 95 })
-        .toFile(`uploads/images/products/${fileName}`);
-      req.body.cover = fileName;
+    if (req.files) {
+      if (req.files.cover) {
+        const fileName: string = `product-${Date.now()}-cover.webp`;
+        await sharp(req.files.cover[0].buffer)
+          .resize(1200, 1200)
+          .webp({ quality: 95 })
+          .toFile(`uploads/images/products/${fileName}`);
+        req.body.cover = fileName;
+      }
+
+      if (req.files.images) {
+        req.files.images = [];
+        await Promise.all(
+          req.files.images.map(async (image: any, index: number) => {
+            const fileName: string = `product-${Date.now()}-image-NO.${
+              index + 1
+            }.webp`;
+            await sharp(image.buffer)
+              .resize(1200, 1200)
+              .webp({ quality: 95 })
+              .toFile(`uploads/images/products/${fileName}`);
+
+            req.body.images.push(fileName);
+          })
+        );
+      }
     }
     next();
-  }
+  };
 
+  // saveImage = async (req: Request, res: Response, next: NextFunction) => {
+  //   if (req.file) {
+  //     const fileName: string = `product-${Date.now()}-cover.webp`;
+  //     await sharp(req.file.buffer)
+  //       .resize(1200, 1200)
+  //       .webp({ quality: 95 })
+  //       .toFile(`uploads/images/products/${fileName}`);
+  //     req.body.cover = fileName;
+  //   }
+  //   next();
+  // }
 }
 
 const productsService = new ProductsService();

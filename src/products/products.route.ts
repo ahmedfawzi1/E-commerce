@@ -26,8 +26,11 @@ productsRoute
 productsRoute
   .route("/:id")
   .get(productsValidation.getOne, productsService.getOne)
-  .put(productsService.uploadImages,
-    productsService.saveImage, productsValidation.updateOne, productsService.updateOne)
+  .put(
+    productsService.uploadImages,
+    productsService.saveImage,
+    productsValidation.updateOne,
+    productsService.updateOne)
   .delete(productsValidation.deleteOne, productsService.deleteOne);
 
 export default productsRoute;
