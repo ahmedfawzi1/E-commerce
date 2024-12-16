@@ -10,6 +10,7 @@ const subCategoriesSchema = new mongoose.Schema<SubCategories>(
   { timestamps: true }
 );
 
+
 subCategoriesSchema.pre<SubCategories>(/^find/, function (next) {
   this.populate({ path: "category", select: "-_id name image" });
   next();

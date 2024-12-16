@@ -24,16 +24,16 @@ class SubCategoriesService {
   getAll = refactorService.getAll<SubCategories>(subCategoriesSchema);
 
   // Create Method
-  createOne = refactorService.getAll<SubCategories>(subCategoriesSchema);
+  createOne = refactorService.createOne<SubCategories>(subCategoriesSchema);
 
   // get one method
-  getOne = refactorService.getAll<SubCategories>(subCategoriesSchema);
+  getOne = refactorService.getOne<SubCategories>(subCategoriesSchema);
 
   // Update Method
-  updateOne = refactorService.getAll<SubCategories>(subCategoriesSchema);
+  updateOne = refactorService.updateOne<SubCategories>(subCategoriesSchema);
 
   // Delete Method
-  deleteOne = refactorService.getAll<SubCategories>(subCategoriesSchema);
+  deleteOne = refactorService.deleteOne<SubCategories>(subCategoriesSchema);
 }
 
 const subCategoriesService = new SubCategoriesService();

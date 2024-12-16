@@ -1,6 +1,9 @@
 import mongoose from "mongoose";
 
 class Features {
+    pagination(documentsCount: number) {
+      throw new Error("Method not implemented.");
+    }
 
     public paginationResults: any;
 

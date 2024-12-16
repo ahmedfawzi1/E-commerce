@@ -3,23 +3,33 @@ import asyncHandler from "express-async-handler";
 import mongoose from "mongoose";
 import ApiErrors from "./utils/apiErrors";
 import Features from "./utils/features";
+import sanitization from "./utils/sanitization";
 
 // CRUD operations
 class RefactorService {
   //Show method
   getAll = <modelType>(model: mongoose.Model<any>, modelName?: string) =>
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-      
       let filterData: any = {};
       if (req.filterData) filterData = req.filterData;
-
-      const documentsCount = await model.findOne(filterData).countDocuments();
-
-      const features = new Features(model.find(filterData), req.query).filter().sort().limitFields().search(modelName!).paginate(documentsCount);
+      const documentsCount = await model.find(filterData).countDocuments();
+      const features = new Features(model.find(filterData), req.query)
+        .filter()
+        .sort()
+        .limitFields()
+        .search(modelName!)
+        .paginate(documentsCount);
       const { mongooseQuery, paginationResults } = features;
-
-      const documents: modelType[] = await mongooseQuery;
-      res.status(200).json({ pagination: paginationResults, data: documents });
+      let documents: any[] = await mongooseQuery;
+      if (modelName === "users")
+        documents = documents.map((document) => sanitization.User(document));
+      res
+        .status(200)
+        .json({
+          pagination: paginationResults,
+          length: documents.length,
+          data: documents,
+        });
     });
 
   // Create Method
@@ -30,11 +40,12 @@ class RefactorService {
     });
 
   // get one method
-  getOne = <modelType>(model: mongoose.Model<any>) =>
+  getOne = <modelType>(model: mongoose.Model<any>, modelName?: string) =>
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-      const documents: modelType | null = await model.findById(req.params.id);
-      if (!documents) return next(new ApiErrors(`${req.__("not_found")}`, 400));
-      res.status(200).json({ data: documents });
+      let document: any = await model.findById(req.params.id);
+      if (!document) return next(new ApiErrors(`${req.__('not_found')}`, 404));
+      if (modelName === 'users') document = sanitization.User(document)
+      res.status(200).json({data: document});
     });
 
   // Update Method
