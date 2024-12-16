@@ -20,6 +20,13 @@ const productsSchema = new mongoose.Schema<Products>(
   { timestamps: true }
 );
 
+const imagesUrl = (document: Products) => {
+  if (document.cover) document.cover = `${process.env.BASE_URL}/images/products/${document.cover}`;
+  if (document.images) document.images = document.images.map(image => `${process.env.BASE_URL}/images/products/${image}`);
+};
+
+productsSchema.post("init", imagesUrl).post("save", imagesUrl);
+
 productsSchema.pre<Products>(/^find/, function (next) {
   this.populate({ path: "subCategory", select: "name image" });
   next();

@@ -1,4 +1,5 @@
 import express from "express";
+import ApiErrors from "../utils/apiErrors";
 
 const devErrors = (err: any, res: express.Response) => {
   res.status(err.statusCode!).json({
@@ -16,15 +17,17 @@ const prodErrors = (err: any, res: express.Response) => {
   });
 };
 
+const handleJwtExpired = (message: string, res: express.Response) => new ApiErrors(message, 401);
 
-const globalErrors = ( err: any, req: express.Request, res: express.Response, next: express.NextFunction ) =>{
-    err.statusCode = err.statusCode || 500;
-    err.status = err.status || 'error';
-    if ( process.env.NODE_ENV === 'development' ) {
-        devErrors( err, res );
-    } else {
-        prodErrors( err, res );
-    }
+const globalErrors = (err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  err.statusCode = err.statusCode || 500;
+  err.status = err.status || 'error';
+  if (err.name == 'tokenExpiredError' || err.name == 'JsonWebTokenError') err = handleJwtExpired(`${req.__('session_Expired')}`, res);
+  if (process.env.NODE_ENV === 'development') {
+    devErrors(err, res);
+  } else {
+    prodErrors(err, res);
+  }
 }
 
 export default globalErrors;
