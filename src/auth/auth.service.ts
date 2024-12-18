@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import asyncHandler from "express-async-handler";
+import crypto from "crypto";
 import bcrypt from "bcryptjs";
-import crypto from "node:crypto"
 import jwt from "jsonwebtoken";
 import usersSchema from "../users/users.schema";
 import ApiErrors from "../utils/apiErrors";
@@ -10,7 +10,7 @@ import sanitization from "../utils/sanitization";
 import sendMail from "../utils/sendMail";
 
 class AuthService {
-
+  
   signup = asyncHandler(
     async (req: Request, res: Response, next: NextFunction) => {
       const user = await usersSchema.create({
@@ -90,19 +90,20 @@ class AuthService {
 
   forgetPassword = asyncHandler(
     async (req: Request, res: Response, next: NextFunction) => {
-      const user: any = await usersSchema.findOne({ email: req.user.email });
+      const user: any = await usersSchema.findOne({ email: req.body.email });
+      if (!user) return next(new ApiErrors(`${req.__("check_email")}`, 404));
 
-      if (!user) return next(new ApiErrors(`${req.__("check_mail")}`, 404));
       const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
-      const cryptedCode = crypto.createHash('sha256').update(resetCode).digest("hex");
-
-      const message = `Your resreset code is: ${resetCode}`;
+      const cryptedCode = crypto
+        .createHash("sha256")
+        .update(resetCode)
+        .digest("hex");
+      const message = `Your reset code is: ${resetCode}`;
       const options = {
         message,
-        mail: user.email,
-        subject: "Reset Password",
+        email: user.email,
+        subject: "Reset password",
       };
-
       try {
         await sendMail(options);
         user.passwordResetCode = cryptedCode;
@@ -113,7 +114,7 @@ class AuthService {
         await user.save({ validateModifiedOnly: true });
       } catch (e) {
         console.log(e);
-        return next(new ApiErrors(`${req.__("send_mail")}`, 500));
+        return next(new ApiErrors(`${req.__("send_email")}`, 500));
       }
       const token = createTokens.resetToken(user._id);
       res.status(200).json({ token, success: true });
@@ -130,19 +131,20 @@ class AuthService {
         token = req.headers.authorization.split(" ")[1];
       else return next(new ApiErrors(`${req.__("check_verify_code")}`, 403));
 
-      const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
-
-      const hashedResetCode: string = crypto.createHash('sha256').update(req.body.resetCode).digest("hex");
-
+      const decoded: any = jwt.verify(token, process.env.JWT_SECRET_RESET!);
+      const hashedResetCode: string = crypto
+        .createHash("sha256")
+        .update(req.body.resetCode)
+        .digest("hex");
       const user: any = await usersSchema.findOne({
         _id: decoded._id,
         passwordResetCode: hashedResetCode,
         passwordResetCodeExpires: { $gt: Date.now() },
       });
-      if (!user) return next(new ApiErrors(`${req.__("check_code_valid")}`, 401));
+      if (!user)
+        return next(new ApiErrors(`${req.__("check_code_valid")}`, 403));
 
       user.passwordResetCodeVerify = true;
-
       if (user.image && user.image.startsWith(`${process.env.BASE_URL}`))
         user.image = user.image.split("/").pop();
       await user.save({ validateModifiedOnly: true });
@@ -161,20 +163,19 @@ class AuthService {
         token = req.headers.authorization.split(" ")[1];
       else return next(new ApiErrors(`${req.__("check_reset_code")}`, 403));
 
-      const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
-
+      const decoded: any = jwt.verify(token, process.env.JWT_SECRET_RESET!);
       const user: any = await usersSchema.findOne({
         _id: decoded._id,
-        passwordResetCodeVerify: true
+        passwordResetCodeVerify: true,
       });
-      if (!user) return next(new ApiErrors(`${req.__("check_code_verify")}`, 403));
+      if (!user)
+        return next(new ApiErrors(`${req.__("check_code_verify")}`, 403));
 
-      user.password = req.body.user
+      user.password = req.body.password;
       user.passwordResetCodeExpires = undefined;
       user.passwordResetCode = undefined;
       user.passwordResetCodeVerify = undefined;
       user.passwordChangedAt = Date.now();
-
       if (user.image && user.image.startsWith(`${process.env.BASE_URL}`))
         user.image = user.image.split("/").pop();
       await user.save({ validateModifiedOnly: true });
@@ -182,7 +183,6 @@ class AuthService {
       res.status(200).json({ success: true });
     }
   );
-
   allowedTo = (...roles: string[]) =>
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
       if (!roles.includes(req.user.role))

@@ -10,6 +10,7 @@ import profileRoute from "./profile/profile.route";
 import googleRoute from "./google/google.route";
 import wishlistRoute from "./wishlist/wishlist.route";
 import addressRoute from "./address/address.route";
+import reviewsRoute from "./reviews/reviews.route";
 
 declare module "express" {
   interface Request {
@@ -28,6 +29,7 @@ const mountRouts = (app: express.Application) => {
   app.use("/api/v1/profile", profileRoute);
   app.use("/api/v1/wishlist", wishlistRoute);
   app.use("/api/v1/address", addressRoute);
+  app.use("/api/v1/reviews", reviewsRoute);
 
 
   app.all("*", (req: express.Request, res: express.Response, next: express.NextFunction) => {

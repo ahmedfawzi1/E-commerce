@@ -1,9 +1,8 @@
-import { uploadMultiFiles } from "./../middlewares/uploadFiles.middleware";
-// imports
-import productsSchema from "./products.schema";
-import { Products } from "./products.interface";
-import refactorService from "../refactor.service";
 import { Request, Response, NextFunction } from "express";
+import { Products } from "./products.interface";
+import productsSchema from "./products.schema";
+import refactorService from "../refactor.service";
+import { uploadMultiFiles } from "./../middlewares/uploadFiles.middleware";
 import sharp from "sharp";
 
 // CRUD operations
@@ -12,16 +11,16 @@ class ProductsService {
   getAll = refactorService.getAll<Products>(productsSchema, "products");
 
   // Create Method
-  createOne = refactorService.getAll<Products>(productsSchema);
+  createOne = refactorService.createOne<Products>(productsSchema);
 
   // get one method
-  getOne = refactorService.getAll<Products>(productsSchema);
+  getOne = refactorService.getOne<Products>(productsSchema, 'products', 'reviews');
 
   // Update Method
-  updateOne = refactorService.getAll<Products>(productsSchema);
+  updateOne = refactorService.updateOne<Products>(productsSchema);
 
   // Delete Method
-  deleteOne = refactorService.getAll<Products>(productsSchema);
+  deleteOne = refactorService.deleteOne<Products>(productsSchema);
 
   // uploded method
   uploadImages = uploadMultiFiles(
