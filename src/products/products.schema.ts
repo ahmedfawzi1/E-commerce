@@ -6,7 +6,7 @@ const productsSchema = new mongoose.Schema<Products>(
     name: { type: String, required: true, trim: true },
     description: { type: String, required: true, trim: true },
     category: { type: mongoose.Schema.Types.ObjectId, ref: "categories" },
-    subCategory: { type: mongoose.Schema.Types.ObjectId, ref: "SubCategories" },
+    subCategory: { type: mongoose.Schema.Types.ObjectId, ref: "subCategories" },
     price: { type: Number, required: true },
     discount: { type: Number },
     priceAfterDiscount: { type: Number },
@@ -17,18 +17,28 @@ const productsSchema = new mongoose.Schema<Products>(
     cover: String,
     images: [String],
   },
-  { timestamps: true }
+  { toJSON: { virtuals: true }, toObject: { virtuals: true }, timestamps: true }
 );
 
+productsSchema.virtual("reviews", {
+  localField: "_id",
+  foreignField: "product",
+  ref: "reviews",
+});
+
 const imagesUrl = (document: Products) => {
-  if (document.cover) document.cover = `${process.env.BASE_URL}/images/products/${document.cover}`;
-  if (document.images) document.images = document.images.map(image => `${process.env.BASE_URL}/images/products/${image}`);
+  if (document.cover)
+    document.cover = `${process.env.BASE_URL}/images/products/${document.cover}`;
+  if (document.images)
+    document.images = document.images.map(
+      (image) => `${process.env.BASE_URL}/images/products/${image}`
+    );
 };
 
 productsSchema.post("init", imagesUrl).post("save", imagesUrl);
 
 productsSchema.pre<Products>(/^find/, function (next) {
-  this.populate({ path: "subCategory", select: "name image" });
+  this.populate({ path: "subcategory", select: "name image" });
   next();
 });
 

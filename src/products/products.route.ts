@@ -1,22 +1,20 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router } from "express";
 import productsService from "./products.service";
 import productsValidation from "./products.validation";
-import multer from "multer";
-import sharp from "sharp";
-
-
-
-
-
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage })
+import reviewsRoute from "../reviews/reviews.route";
+import authService from "../auth/auth.service";
 
 const productsRoute: Router = Router({ mergeParams: true });
+
+productsRoute.use("/:productId/reviews", reviewsRoute);
 
 productsRoute
   .route("/")
   .get(productsService.getAll)
   .post(
+    authService.protectedRoutes,
+    authService.checkActive,
+    authService.allowedTo("admin", "employee"),
     productsService.uploadImages,
     productsService.saveImage,
     productsValidation.createOne,
@@ -27,10 +25,20 @@ productsRoute
   .route("/:id")
   .get(productsValidation.getOne, productsService.getOne)
   .put(
+    authService.protectedRoutes,
+    authService.checkActive,
+    authService.allowedTo("admin", "employee"),
     productsService.uploadImages,
     productsService.saveImage,
     productsValidation.updateOne,
-    productsService.updateOne)
-  .delete(productsValidation.deleteOne, productsService.deleteOne);
+    productsService.updateOne
+  )
+  .delete(
+    authService.protectedRoutes,
+    authService.checkActive,
+    authService.allowedTo("admin", "employee"),
+    productsValidation.deleteOne,
+    productsService.deleteOne
+  );
 
 export default productsRoute;

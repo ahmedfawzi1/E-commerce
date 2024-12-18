@@ -23,13 +23,11 @@ class RefactorService {
       let documents: any[] = await mongooseQuery;
       if (modelName === "users")
         documents = documents.map((document) => sanitization.User(document));
-      res
-        .status(200)
-        .json({
-          pagination: paginationResults,
-          length: documents.length,
-          data: documents,
-        });
+      res.status(200).json({
+        pagination: paginationResults,
+        length: documents.length,
+        data: documents,
+      });
     });
 
   // Create Method
@@ -40,18 +38,20 @@ class RefactorService {
     });
 
   // get one method
-  getOne = <modelType>(model: mongoose.Model<any>, modelName?: string) =>
+  getOne = <modelType>(model: mongoose.Model<any>,modelName?: string,populationOptions?: string) =>
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-      let document: any = await model.findById(req.params.id);
-      if (!document) return next(new ApiErrors(`${req.__('not_found')}`, 404));
-      if (modelName === 'users') document = sanitization.User(document)
-      res.status(200).json({data: document});
+      let query: any = model.findById(req.params.id);
+      if (populationOptions) query = query.populate(populationOptions);
+      let document: any = await query;
+      if (!document) return next(new ApiErrors(`${req.__("not_found")}`, 404));
+      if (modelName === "users") document = sanitization.User(document);
+      res.status(200).json({ data: document });
     });
 
   // Update Method
   updateOne = <modelType>(model: mongoose.Model<any>) =>
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-      const documents: modelType | null = await model.findByIdAndUpdate(
+      const documents: any = await model.findByIdAndUpdate(
         req.params.id,
         req.body,
         { new: true }
